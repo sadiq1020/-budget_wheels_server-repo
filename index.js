@@ -20,6 +20,7 @@ async function run() {
         const productsCollection = client.db('budgetWheels').collection('products');
         const categoriesCollection = client.db('budgetWheels').collection('categories');
         const usersCollection = client.db('budgetWheels').collection('users');
+        const bookingsCollection = client.db('budgetWheels').collection('bookings');
 
         // get all three categories
         app.get('/categories', async (req, res) => {
@@ -35,6 +36,28 @@ async function run() {
             const products = await productsCollection.find(query).toArray();
             res.send(products);
         });
+
+        // save booking info to db
+        app.post('/bookings', async (req, res) => {
+            const booking = req.body;
+
+            // first checking, if the same product already booked
+            const query = {
+                buyerName: booking.buyerName,
+                email: booking.email,
+                brand: booking.brand,
+                series: booking.series
+            }
+
+            const alreadyBooked = await bookingsCollection.find(query).toArray();
+            if (alreadyBooked.length) {
+                const message = `You already have booked this ${booking.brand} ${booking.series}`
+                return res.send({ acknowledged: false, message })
+            }
+
+            const result = await bookingsCollection.insertOne(booking);
+            res.send(result);
+        })
 
         // save all users info in db
         app.post('/users', async (req, res) => {
