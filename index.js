@@ -41,17 +41,16 @@ async function run() {
         app.post('/bookings', async (req, res) => {
             const booking = req.body;
 
-            // first checking, if the same product already booked
+            // first checking, if the product is already booked
             const query = {
                 buyerName: booking.buyerName,
                 email: booking.email,
                 brand: booking.brand,
                 series: booking.series
             }
-
             const alreadyBooked = await bookingsCollection.find(query).toArray();
             if (alreadyBooked.length) {
-                const message = `You already have booked this ${booking.brand} ${booking.series}`
+                const message = `${booking.brand} ${booking.series} is already booked`
                 return res.send({ acknowledged: false, message })
             }
 
@@ -59,9 +58,27 @@ async function run() {
             res.send(result);
         })
 
+        // get my bookings 
+        app.get('/bookings', async (req, res) => {
+            const email = req.query.email;
+            const query = { email: email }
+            const result = await bookingsCollection.find(query).toArray()
+            res.send(result);
+        })
+
         // save all users info in db
         app.post('/users', async (req, res) => {
             const user = req.body;
+
+            // check if the google login user exist in db
+            const query = {
+                email: user.email
+            }
+            const alreadySaved = await usersCollection.findOne(query);
+            if (alreadySaved) {
+                return res.send({ acknowledged: false })
+            }
+
             const result = await usersCollection.insertOne(user);
             res.send(result);
         });
