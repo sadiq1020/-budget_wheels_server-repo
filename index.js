@@ -66,6 +66,21 @@ async function run() {
             res.send(result);
         })
 
+        // add new product by seller
+        app.post('/products', async (req, res) => {
+            const product = req.body;
+            const result = await productsCollection.insertOne(product);
+            res.send(result);
+        })
+
+        // get all products added by seller
+        app.get('/myproducts', async (req, res) => {
+            const email = req.query.email;
+            const query = { email: email }
+            const result = await productsCollection.find(query).toArray();
+            res.send(result);
+        })
+
         // save all users info in db
         app.post('/users', async (req, res) => {
             const user = req.body;
