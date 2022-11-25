@@ -17,11 +17,16 @@ const client = new MongoClient(uri, { useNewUrlParser: true, useUnifiedTopology:
 
 async function run() {
     try {
+        //  -------------------------------- collections ---------------------------------
         const productsCollection = client.db('budgetWheels').collection('products');
         const categoriesCollection = client.db('budgetWheels').collection('categories');
         const usersCollection = client.db('budgetWheels').collection('users');
         const bookingsCollection = client.db('budgetWheels').collection('bookings');
+        const advertisedCollection = client.db('budgetWheels').collection('advertised');
+        //-------------------------------------------------------------------------------
 
+
+        // --------------------------------- categories ---------------------------------
         // get all three categories
         app.get('/categories', async (req, res) => {
             const query = {};
@@ -36,7 +41,10 @@ async function run() {
             const products = await productsCollection.find(query).toArray();
             res.send(products);
         });
+        // ---------------------------------------------------------------------------------
 
+
+        //---------------------------------- booking -----------------------------------
         // save booking info to db
         app.post('/bookings', async (req, res) => {
             const booking = req.body;
@@ -65,6 +73,8 @@ async function run() {
             const result = await bookingsCollection.find(query).toArray()
             res.send(result);
         })
+        //-------------------------------------------------------------------------------
+
 
         // --------------------------------- sellers ------------------------------------
         // add new product by seller 
@@ -89,12 +99,28 @@ async function run() {
             const result = await productsCollection.deleteOne(filter);
             res.send(result);
         })
-
         // -------------------------------------------------------------------------------
 
+        // -------------------------------- advertised --------------------------------------
+        // save advertised items to db
+        app.post('/advertise', async (req, res) => {
+            const advertisedProduct = req.body;
+            const result = await advertisedCollection.insertOne(advertisedProduct);
+            res.send(result);
+        })
+
+        // get all advertised items to show in home page
+        app.get('/advertise', async (req, res) => {
+            const query = {};
+            const result = await advertisedCollection.find(query).toArray();
+            res.send(result);
+        })
+
+        // ----------------------------------------------------------------------------------
 
 
-        // save all users info in db -------------------------------------
+        // --------------------------------- Users ---------------------------------------
+        // save all users info in db 
         app.post('/users', async (req, res) => {
             const user = req.body;
 
@@ -110,6 +136,7 @@ async function run() {
             const result = await usersCollection.insertOne(user);
             res.send(result);
         });
+        // -------------------------------------------------------------------------------
 
     }
     finally {
