@@ -1,6 +1,6 @@
 const express = require('express');
 const cors = require('cors');
-const { MongoClient, ServerApiVersion } = require('mongodb');
+const { MongoClient, ServerApiVersion, ObjectId } = require('mongodb');
 require('dotenv').config();
 const port = process.env.PORT || 5000;
 
@@ -66,7 +66,8 @@ async function run() {
             res.send(result);
         })
 
-        // add new product by seller
+        // --------------------------------- sellers ------------------------------------
+        // add new product by seller 
         app.post('/products', async (req, res) => {
             const product = req.body;
             const result = await productsCollection.insertOne(product);
@@ -81,7 +82,19 @@ async function run() {
             res.send(result);
         })
 
-        // save all users info in db
+        // delete a product by seller
+        app.delete('/myproducts/:id', async (req, res) => {
+            const id = req.params.id;
+            const filter = { _id: ObjectId(id) };
+            const result = await productsCollection.deleteOne(filter);
+            res.send(result);
+        })
+
+        // -------------------------------------------------------------------------------
+
+
+
+        // save all users info in db -------------------------------------
         app.post('/users', async (req, res) => {
             const user = req.body;
 
