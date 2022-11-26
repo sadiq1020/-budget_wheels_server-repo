@@ -72,7 +72,7 @@ async function run() {
             const query = { email: email }
             const result = await bookingsCollection.find(query).toArray()
             res.send(result);
-        })
+        });
         //-------------------------------------------------------------------------------
 
 
@@ -82,7 +82,7 @@ async function run() {
             const product = req.body;
             const result = await productsCollection.insertOne(product);
             res.send(result);
-        })
+        });
 
         // get all products added by seller
         app.get('/myproducts', async (req, res) => {
@@ -90,7 +90,7 @@ async function run() {
             const query = { email: email }
             const result = await productsCollection.find(query).toArray();
             res.send(result);
-        })
+        });
 
         // delete a product by seller
         app.delete('/myproducts/:id', async (req, res) => {
@@ -99,7 +99,7 @@ async function run() {
             const filter = { _id: ObjectId(id) };
             const result = await productsCollection.deleteOne(filter);
             res.send(result);
-        })
+        });
         // -------------------------------------------------------------------------------
 
         // -------------------------------- advertised --------------------------------------
@@ -108,14 +108,14 @@ async function run() {
             const advertisedProduct = req.body;
             const result = await advertisedCollection.insertOne(advertisedProduct);
             res.send(result);
-        })
+        });
 
         // get all advertised items to show in home page
         app.get('/advertise', async (req, res) => {
             const query = {};
             const result = await advertisedCollection.find(query).toArray();
             res.send(result);
-        })
+        });
 
         // get single seller's advertised products
         app.get('/advertise', async (req, res) => {
@@ -125,16 +125,15 @@ async function run() {
             }
             const result = await advertisedCollection.find(query).toArray();
             res.send(result);
-        })
+        });
 
-        // delete advertised items (not used)
+        // delete advertised item (not used)
         app.delete('/advertise/:id', async (req, res) => {
             const id = req.params.id;
-            console.log(id);
             const filter = { _id: ObjectId(id) };
             const result = await advertisedCollection.deleteOne(filter);
             res.send(result);
-        })
+        });
         // ----------------------------------------------------------------------------------
 
 
@@ -167,6 +166,23 @@ async function run() {
 
         // delete buyer
         app.delete('/users/buyers/:id', async (req, res) => {
+            const id = req.params.id;
+            const filter = { _id: ObjectId(id) };
+            const result = await usersCollection.deleteOne(filter);
+            res.send(result);
+        })
+
+        // get all sellers
+        app.get('/users/sellers', async (req, res) => {
+            const query = {
+                role: 'Seller'
+            }
+            const result = await usersCollection.find(query).toArray();
+            res.send(result);
+        })
+
+        // delete seller
+        app.delete('/users/sellers/:id', async (req, res) => {
             const id = req.params.id;
             const filter = { _id: ObjectId(id) };
             const result = await usersCollection.deleteOne(filter);
