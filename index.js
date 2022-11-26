@@ -16,7 +16,7 @@ app.use(express.json());
 const uri = `mongodb+srv://${process.env.DB_USER}:${process.env.DB_PASS}@cluster0.e3n1sso.mongodb.net/?retryWrites=true&w=majority`;
 const client = new MongoClient(uri, { useNewUrlParser: true, useUnifiedTopology: true, serverApi: ServerApiVersion.v1 });
 
-// jwt function/middleware
+// ----------------------------------- jwt function/middleware ---------------------------------
 function verifyJWT(req, res, next) {
     // console.log(req.headers.authorization);
 
@@ -35,6 +35,8 @@ function verifyJWT(req, res, next) {
         next();
     })
 }
+// --------------------------------------------------------------------------------------------
+
 
 async function run() {
     try {
@@ -107,7 +109,18 @@ async function run() {
 
         // --------------------------------- sellers ------------------------------------
         // add new product by seller 
-        app.post('/products', async (req, res) => {
+        app.post('/products', verifyJWT, async (req, res) => {
+
+            // first checking if the role is "seller"
+            const decodedEmail = req.decoded.email;
+            const query = { email: decodedEmail };
+            const user = await usersCollection.findOne(query);
+
+            if (user?.role !== 'Seller') {
+                return res.status(403).send({ message: 'forbidden access' })
+            }
+
+            // if seller then product can be added
             const product = req.body;
             const result = await productsCollection.insertOne(product);
             res.send(result);
@@ -122,7 +135,18 @@ async function run() {
         });
 
         // delete a product by seller
-        app.delete('/myproducts/:id', async (req, res) => {
+        app.delete('/myproducts/:id', verifyJWT, async (req, res) => {
+
+            // first checking if the role is "admin"
+            const decodedEmail = req.decoded.email;
+            const query = { email: decodedEmail };
+            const user = await usersCollection.findOne(query);
+
+            if (user?.role !== 'Seller') {
+                return res.status(403).send({ message: 'forbidden access' })
+            }
+
+            // if seller then product can be deleted
             const id = req.params.id;
             console.log(id);
             const filter = { _id: ObjectId(id) };
@@ -133,7 +157,18 @@ async function run() {
 
         // -------------------------------- advertised --------------------------------------
         // save advertised items to db
-        app.post('/advertise', async (req, res) => {
+        app.post('/advertise', verifyJWT, async (req, res) => {
+
+            // first checking if the role is "admin"
+            const decodedEmail = req.decoded.email;
+            const query = { email: decodedEmail };
+            const user = await usersCollection.findOne(query);
+
+            if (user?.role !== 'Seller') {
+                return res.status(403).send({ message: 'forbidden access' })
+            }
+
+            // if seller then product can be added to advertisedCollection
             const advertisedProduct = req.body;
             const result = await advertisedCollection.insertOne(advertisedProduct);
             res.send(result);
@@ -196,6 +231,30 @@ async function run() {
             const result = await usersCollection.insertOne(user);
             res.send(result);
         });
+
+        // checking if the user is "Admin"
+        app.get('/users/admin/:email', async (req, res) => {
+            const email = req.params.email;
+            const query = { email: email };
+            const user = await usersCollection.findOne(query);
+            res.send({ isAdmin: user?.role === 'Admin' });
+        })
+
+        // checking if the user is "Seller"
+        app.get('/users/seller/:email', async (req, res) => {
+            const email = req.params.email;
+            const query = { email: email };
+            const user = await usersCollection.findOne(query);
+            res.send({ isSeller: user?.role === 'Seller' });
+        })
+
+        // checking if the user is "Buyer"
+        app.get('/users/buyer/:email', async (req, res) => {
+            const email = req.params.email;
+            const query = { email: email };
+            const user = await usersCollection.findOne(query);
+            res.send({ isBuyer: user?.role === 'Buyer' });
+        })
 
         // get all buyers
         app.get('/users/buyers', async (req, res) => {
