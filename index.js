@@ -156,10 +156,11 @@ async function run() {
         // -------------------------------------------------------------------------------
 
         // -------------------------------- advertised --------------------------------------
-        // save advertised items to db
-        app.post('/advertise', verifyJWT, async (req, res) => {
 
-            // first checking if the role is "admin"
+        // Update products as advertised in products collection
+        app.put('/products/:id', verifyJWT, async (req, res) => {
+
+            // first checking if the role is "seller"
             const decodedEmail = req.decoded.email;
             const query = { email: decodedEmail };
             const user = await usersCollection.findOne(query);
@@ -168,36 +169,28 @@ async function run() {
                 return res.status(403).send({ message: 'forbidden access' })
             }
 
-            // if seller then product can be added to advertisedCollection
-            const advertisedProduct = req.body;
-            const result = await advertisedCollection.insertOne(advertisedProduct);
-            res.send(result);
-        });
-
-        // get all advertised items to show in home page
-        app.get('/advertise', async (req, res) => {
-            const query = {};
-            const result = await advertisedCollection.find(query).toArray();
-            res.send(result);
-        });
-
-        // get single seller's advertised products
-        app.get('/myadvertise', async (req, res) => {
-            const email = req.query.email;
-            const query = {
-                email: email
-            }
-            const result = await advertisedCollection.find(query).toArray();
-            res.send(result);
-        });
-
-        // delete advertised item (not used)
-        app.delete('/advertise/:id', async (req, res) => {
+            // if seller, then product can be updated as advertised
             const id = req.params.id;
             const filter = { _id: ObjectId(id) };
-            const result = await advertisedCollection.deleteOne(filter);
+
+            const options = { upsert: true }
+            const updatedDoc = {
+                $set: {
+                    isAdvertised: 'Yes'
+                }
+            }
+            const result = await productsCollection.updateOne(filter, updatedDoc, options);
             res.send(result);
-        });
+        })
+
+        // get only "advertised products" from products collection
+        app.get('/advertisedproducts', async (req, res) => {
+            const query = {
+                isAdvertised: 'Yes'
+            };
+            const result = await productsCollection.find(query).toArray();
+            res.send(result);
+        })
         // ----------------------------------------------------------------------------------
 
         // ------------------------------ generating jwt ------------------------------------
@@ -308,6 +301,36 @@ async function run() {
             const id = req.params.id;
             const filter = { _id: ObjectId(id) };
             const result = await usersCollection.deleteOne(filter);
+            res.send(result);
+        })
+
+        // change seller status to "Verified" in products section
+        app.put('/products/seller/:email', async (req, res) => {
+            const email = req.params.email;
+            const filter = { email: email };
+
+            const options = { upsert: true }
+            const updatedDoc = {
+                $set: {
+                    status: 'Verified'
+                }
+            }
+            const result = await productsCollection.updateOne(filter, updatedDoc, options)
+            res.send(result);
+        })
+
+        // change seller status in seller collection just to conditional button rendering!
+        app.put('/users/sellers/:id', async (req, res) => {
+            const id = req.params.id;
+            const filter = { _id: ObjectId(id) };
+
+            const options = { upsert: true }
+            const updatedDoc = {
+                $set: {
+                    status: 'Verified'
+                }
+            }
+            const result = await usersCollection.updateOne(filter, updatedDoc, options)
             res.send(result);
         })
         // -------------------------------------------------------------------------------
