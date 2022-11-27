@@ -104,6 +104,14 @@ async function run() {
             const result = await bookingsCollection.find(query).toArray()
             res.send(result);
         });
+
+        // get specific booking product for payment
+        app.get('/bookings/:id', async (req, res) => {
+            const id = req.params.id;
+            const filter = { _id: ObjectId(id) };
+            const result = await bookingsCollection.findOne(filter);
+            res.send(result);
+        })
         //-------------------------------------------------------------------------------
 
 
@@ -189,6 +197,62 @@ async function run() {
                 isAdvertised: 'Yes'
             };
             const result = await productsCollection.find(query).toArray();
+            res.send(result);
+        })
+        // ----------------------------------------------------------------------------------
+
+        // ----------------------------- report to admin ------------------------------------
+        // change report status in products collection
+        app.put('/reportproduct/:id', verifyJWT, async (req, res) => {
+
+            // first checking if the role is "buyer"
+            const decodedEmail = req.decoded.email;
+            const query = { email: decodedEmail };
+            const user = await usersCollection.findOne(query);
+
+            if (user?.role !== 'Buyer') {
+                return res.status(403).send({ message: 'forbidden access' })
+            }
+
+            // if buyer, then product can be updated as reported
+            const id = req.params.id;
+            const filter = { _id: ObjectId(id) };
+
+            const options = { upsert: true }
+            const updatedDoc = {
+                $set: {
+                    isReported: 'Yes'
+                }
+            }
+            const result = await productsCollection.updateOne(filter, updatedDoc, options);
+            res.send(result);
+        })
+
+        // get reported products from product collection
+        app.get('/products/reportedproducts', async (req, res) => {
+            const query = {
+                isReported: 'Yes'
+            }
+            const result = await productsCollection.find(query).toArray();
+            res.send(result);
+        })
+
+        // delete reported product from product collection
+        app.delete('/products/delete/:id', verifyJWT, async (req, res) => {
+
+            // first checking if the role is "admin"
+            const decodedEmail = req.decoded.email;
+            const query = { email: decodedEmail };
+            const user = await usersCollection.findOne(query);
+
+            if (user?.role !== 'Admin') {
+                return res.status(403).send({ message: 'forbidden access' })
+            }
+
+            // now if the user is "admin" then delete reported product will be applied
+            const id = req.params.id;
+            const filter = { _id: ObjectId(id) };
+            const result = await productsCollection.deleteOne(filter);
             res.send(result);
         })
         // ----------------------------------------------------------------------------------
