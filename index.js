@@ -47,7 +47,8 @@ async function run() {
         const categoriesCollection = client.db('budgetWheels').collection('categories');
         const usersCollection = client.db('budgetWheels').collection('users');
         const bookingsCollection = client.db('budgetWheels').collection('bookings');
-        const advertisedCollection = client.db('budgetWheels').collection('advertised');
+        // const advertisedCollection = client.db('budgetwheels').collection('advertised');
+        const paymentsCollection = client.db('budgetWheels').collection('payments');
         //-------------------------------------------------------------------------------
 
 
@@ -76,10 +77,7 @@ async function run() {
 
             // first checking, if the product is already booked
             const query = {
-                buyerName: booking.buyerName,
-                email: booking.email,
-                brand: booking.brand,
-                series: booking.series
+                productId: booking.productId
             }
             const alreadyBooked = await bookingsCollection.find(query).toArray();
             if (alreadyBooked.length) {
@@ -276,7 +274,31 @@ async function run() {
                 clientSecret: paymentIntent.client_secret,
             });
         })
-        // ----------------------------------------------------------------------------------
+
+        // save payment info in payment collection 
+        app.post('/payments', async (req, res) => {
+            const payment = req.body;
+            const result = await paymentsCollection.insertOne(payment);
+
+            // update payment info in booking collection
+            const id = payment.bookingId;
+            const filter = { _id: ObjectId(id) }
+            const updatedDoc = {
+                $set: {
+                    paid: true,
+                    transactionId: payment.transactionId
+                }
+            }
+            const updatedBookings = await bookingsCollection.updateOne(filter, updatedDoc);
+
+            // delete paid product from products collection (also will be deleted from advertised)
+            const productId = payment.productId;
+            const filterTwo = { _id: ObjectId(productId) }
+            const deleteFromProductCollection = await productsCollection.deleteOne(filterTwo);
+
+            res.send(result);
+        })
+        // -----------------------------------------------------------------------------------
 
         // ------------------------------ generating jwt ------------------------------------
         app.get('/jwt', async (req, res) => {
